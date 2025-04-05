@@ -1,21 +1,75 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    const baseUrl = "https://raw.githubusercontent.com/YOUR_USERNAME/bitburner-autoscripts/main/";
-    const files = [
-        "master.js",
-        "auto/scanner.js",
-        "auto/targetSelector.js",
-        "auto/hackDistributor.js",
-        "auto/smartHack.js"
+    const baseUrl = "https://raw.githubusercontent.com/Icymelonpop/bitburner-automation/main/";
+
+    const filesToDownload = [
+        // Core
+        "src/core/network-mapper.js",
+        "src/core/root-access.js",
+        "src/core/target-selector.js",
+
+        // Infrastructure
+        "src/infra/server-purchase.js",
+        "src/infra/server-upgrader.js",
+        "src/infra/server-cleaner.js",
+        "src/infra/show-purchased-servers.js",
+        "src/infra/deploy-hack-to-slaves.js",
+        "src/infra/home-upgrader.js",
+
+        // Batch
+        "src/batch/hwgw-scheduler.js",
+        "src/batch/schedule-distributor.js",
+
+        // Actions & Strategies
+        "src/actions/hack.js",
+        "src/actions/grow.js",
+        "src/actions/weaken.js",
+        "src/strategies/smart-hack.js",
+
+        // Stock
+        "src/stock/stock-bot.js",
+        "src/stock/stock-full.js",
+        "src/stock/stock-lite.js",
+        "src/stock/stock-logger.js",
+
+        // Factions
+        "src/factions/faction-manager.js",
+        "src/factions/faction-worker.js",
+
+        // Endgame
+        "src/endgame/daedalus-detector.js",
+        "src/endgame/bitnode-reset.js",
+
+        // Tools
+        "src/tools/apply-bitnode-config.js",
+        "src/tools/early-hack.js",
+        "src/tools/set-feature-toggle.js",
+        "src/tools/feature-toggle-scheduler.js",
+
+        // Utils
+        "src/utils/money-manager.js",
+
+        // Main runners
+        "main.js",
+        "auto-runner.js"
     ];
 
-    for (const file of files) {
+    for (const file of filesToDownload) {
         const url = baseUrl + file;
-        await ns.wget(url, file);
-        ns.tprint(`📦 다운로드: ${file}`);
-        await ns.sleep(200);
+        const success = await ns.wget(url, file);
+        if (success) {
+            ns.print(`✔ Downloaded: ${file}`);
+        } else {
+            ns.tprint(`✖ Failed to download: ${file}`);
+        }
+        await ns.sleep(100);
     }
 
-    ns.tprint("✅ 전체 설치 완료! 시작합니다...");
-    ns.run("master.js");
+    // Apply BitNode-specific budget config
+    await ns.run("src/tools/apply-bitnode-config.js");
+    await ns.sleep(500);
+
+    // Launch the main automation sequence
+    ns.tprint("🚀 Launching automation via main.js...");
+    ns.run("main.js");
 }
