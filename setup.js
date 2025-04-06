@@ -54,7 +54,7 @@ export async function main(ns) {
         "auto-runner.js",
 
         // Config files
-        "config/factions.txt"
+        "src/config/factions.txt"
     ];
 
     for (const file of filesToDownload) {
