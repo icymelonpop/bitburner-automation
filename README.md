@@ -1,7 +1,7 @@
 # Bitburner Automation System
 
 > Complete end-to-end automation framework for Bitburner  
-> Covers hacking, server infrastructure, intelligent stock trading (with 4S support), faction automation, and BitNode endgame reset.
+> Covers distributed hacking, server infrastructure, intelligent stock trading (4S-aware), faction automation, and BitNode endgame reset.
 
 ---
 
@@ -20,7 +20,7 @@ run setup.js
 ```
 
 > ✅ Automatically downloads all scripts and launches `main.js`  
-> ⚙️ Applies BitNode-specific config  
+> ⚙️ Applies BitNode-specific budget config  
 > 📂 Initializes full system: hacking, stock, factions, endgame, etc.
 
 ---
@@ -29,23 +29,20 @@ run setup.js
 
 ```
 src/
-├── actions/            # Basic one-shot scripts: hack/grow/weaken
-├── batch/              # Batch HWGW scheduler per target
-├── core/               # Network scan, root access, target selection
-├── endgame/            # Daedalus detection, BitNode reset logic
-├── factions/           # Faction management & rep farming
-├── infra/              # Purchased server management (buy/upgrade/deploy)
-├── stock/              # Stock bots (4S and fallback)
-├── strategies/         # Adaptive scripts (e.g., smart-hack)
-├── tools/              # BitNode budget config, feature toggles
-├── utils/              # Utilities: money manager, etc.
-config/
-├── feature-toggle.json # Enables/disables modules (optional)
-├── budget-config.txt   # BitNode-specific fund allocation
-├── factions.txt        # Optional faction priority list
-main.js                 # Central automation launcher
-auto-runner.js          # Background automation loop
-setup.js                # GitHub installer (wget this)
+├── actions/             # Basic operations (hack/grow/weaken)
+├── batch/               # Batch HWGW scheduler system (optional)
+├── config/              # Budget, feature toggles, faction priority
+├── core/                # Network scan, root access, target selection
+├── endgame/             # Daedalus detection, BitNode reset
+├── factions/            # Faction join, management, and work automation
+├── infra/               # Server purchase, upgrade, script deployers
+├── stock/               # Stock bots (4S-aware and fallback)
+├── strategies/          # Self-hack / smart-hack strategies
+├── tools/               # BitNode budget config, feature toggles
+├── utils/               # Utility tools: money manager
+main.js                  # Central automation launcher
+auto-runner.js           # Background infra + stock loop
+setup.js                 # GitHub installer (wget this)
 ```
 
 ---
@@ -59,24 +56,24 @@ setup.js                # GitHub installer (wget this)
   └─ Launches main.js
 
 [main.js]
-  ├─ core/network-mapper.js       ← Scan network
-  ├─ core/root-access.js          ← Gain root access
-  ├─ core/target-selector.js      ← Select best hacking targets
-  ├─ tools/early-hack.js          ← Early game loop (RAM-safe)
-  ├─ batch/schedule-distributor.js
-  ├─ factions/faction-manager.js  ← Join & monitor factions
+  ├─ core/network-mapper.js
+  ├─ core/root-access.js
+  ├─ core/target-selector.js
+  ├─ infra/deploy-self-hack.js         ← Distributed default
+  ├─ batch/schedule-distributor.js     ← Optional batch mode
+  ├─ factions/faction-manager.js
   ├─ stock/stock-bot.js
-  │   ├─ stock-full.js ← if 4S API unlocked
+  │   ├─ stock-full.js ← if 4S API is unlocked
   │   └─ stock-lite.js ← fallback strategy
   ├─ infra/home-upgrader.js
   └─ auto-runner.js
       ├─ infra/server-purchase.js
       ├─ infra/deploy-hack-to-slaves.js
-      └─ infra/server-upgrade.js
+      └─ infra/server-upgrader.js
 
 [endgame]
-  ├─ daedalus-detector.js
-  └─ bitnode-reset.js
+  ├─ endgame/daedalus-detector.js
+  └─ endgame/bitnode-reset.js
 ```
 
 ---
@@ -89,7 +86,13 @@ When `setup.js` runs, it automatically executes:
 run src/tools/apply-bitnode-config.js
 ```
 
-This generates `config/budget-config.txt`, for example:
+Which generates:
+
+```json
+config/budget-config.txt
+```
+
+Example:
 
 ```json
 {
@@ -100,20 +103,37 @@ This generates `config/budget-config.txt`, for example:
 }
 ```
 
-> Budgets adjust dynamically depending on BitNode.  
-> (e.g. BitNode-2 disables stock module automatically)
+> Budget logic adapts automatically to the BitNode (e.g. disables stock in BitNode-2)
+
+---
+
+## ⚔️ Default Hacking Strategy
+
+### Distributed Self-Hack System
+
+- All rooted servers run `src/strategies/self-hack.js`
+- Each server uses its own RAM
+- Minimal memory: ~1.75 GB
+- No need for home/pserv resources
+
+```js
+if (security too high) → weaken
+else if (money low) → grow
+else → hack
+```
+
+> 📄 Deployed by: `infra/deploy-self-hack.js`
 
 ---
 
 ## ✨ Features
 
-- ✅ Full HWGW batch scheduling
-- ✅ Intelligent target selection
-- ✅ Root access automation
-- ✅ Smart hack loop (RAM-safe early strategy)
-- ✅ Stock bot that adapts to 4S access
-- ✅ Auto faction join + rep farming
-- ✅ Auto home/server upgrades
+- ✅ Distributed self-hack on every rooted server
+- ✅ Optional HWGW batch support for high-RAM servers
+- ✅ Stock trading with automatic 4S detection
+- ✅ Auto faction joining + reputation farming
+- ✅ Smart hack strategy for pserv deployment
+- ✅ Dynamic BitNode-aware budget system
 - ✅ Daedalus detection and auto-reset
 
 ---

@@ -1,187 +1,226 @@
 # Bitburner Automation - Architecture Documentation
 
+---
+
 ## 📌 Overview
 
-This system is a full-featured Bitburner automation framework that supports:
+This project is a **modular and extensible automation framework** for [Bitburner](https://danielyxie.github.io/bitburner/).  
+It automates all key systems: hacking, stock trading, infrastructure, factions, and endgame resets.
 
-- Smart hacking with HWGW batch logic
-- Adaptive server management
-- Stock trading with 4S detection and fallback
-- Faction automation
-- BitNode-aware budgeting
-- Endgame reset logic
+Designed with:
+- Clean folder structure for readability and GitHub maintenance
+- BitNode-adaptive configuration
+- Minimal manual intervention
+- Self-repairing and update-friendly via `setup.js`
 
-Everything is initialized and orchestrated through a central entry point, and each layer operates semi-independently for modular control and upgradeability.
+---
+
+## 🧭 High-Level System Design
+
+```
++--------------------------+
+|     setup.js (entry)     |
++-----------+--------------+
+            |
+            v
++--------------------------+
+|     main.js (core)       | ← Feature toggles apply here
++-----------+--------------+
+            |
+     ┌──────┼────────────────────┐
+     ↓      ↓                    ↓
+[Core]   [Infra]              [Auto-runner]
+ Scan     Servers                Loop
+ Root     Deploy
+ Targets  Upgrade
+
+            ↓
+         [Stock]
+         [Factions]
+         [Endgame]
+```
+
+All components are **independent scripts** managed by `main.js`, `auto-runner.js`, and scheduled logic.
 
 ---
 
 ## 🔁 Execution Pipeline
 
-### 1. Initial Boot
-
-Executed via:
+### 1. Boot
 
 ```bash
 wget https://raw.githubusercontent.com/Icymelonpop/bitburner-automation/main/setup.js setup.js
 run setup.js
 ```
 
-Which performs:
-
-- 🧲 Downloads all scripts into proper folders
-- ⚙️ Runs `tools/apply-bitnode-config.js`
-- 🚀 Launches `main.js` → triggers all core modules
-
----
-
-### 2. main.js
-
-Core automation script that initializes the system.
-
-**Responsibilities:**
-
-- Network scan (`core/network-mapper.js`)
-- Root access (`core/root-access.js`)
-- Target list generation (`core/target-selector.js`)
-- Early hack fallback (`tools/early-hack.js`)
-- Batch hacking scheduler (`batch/schedule-distributor.js`)
-- Stock bot decision (`stock/stock-bot.js`)
-- Faction management (`factions/faction-manager.js`)
-- Endgame reset logic
-- Background loop (`auto-runner.js`)
+This performs:
+- 🔽 Downloads all scripts from GitHub (structured into folders)
+- 🔧 Applies BitNode-specific budget logic
+- 🧠 Initializes `main.js`, which configures the system
 
 ---
 
-## ⚙️ Core Modules (src/core)
+### 2. Main Orchestrator - `main.js`
+
+The central script that:
+- Applies toggles (stock, faction, endgame modules)
+- Initializes core infrastructure
+- Launches optional batch hacking
+- Starts background automation (`auto-runner.js`)
+
+---
+
+## 📁 Folder-by-Folder Breakdown
+
+### 📂 `src/core/` – Core Initialization
 
 | Script | Role |
 |--------|------|
-| `network-mapper.js` | Recursively scans all reachable servers and writes to `server-list.txt`  
-| `root-access.js` | Attempts to nuke all reachable servers using available port crackers  
-| `target-selector.js` | Selects hackable targets sorted by money/sec and writes to `targets.txt`  
+| `network-mapper.js` | Recursive DFS scan of all servers → `server-list.txt`  
+| `root-access.js` | Runs port crackers and nukes eligible servers  
+| `target-selector.js` | Selects profitable hack targets → `targets.txt`  
 
 ---
 
-## 🔁 Batch Hacking System (src/batch)
-
-Handles HWGW (Hack-Grow-Weaken-Weaken) logic for all targets.
+### 📂 `src/infra/` – Infrastructure Automation
 
 | Script | Role |
 |--------|------|
-| `schedule-distributor.js` | Reads `targets.txt` and launches scheduler per target  
-| `hwgw-scheduler.js` | Executes HWGW per target with appropriate delays  
-| `actions/hack|grow|weaken.js` | Primitive execution for each operation with delay parameter support  
+| `server-purchase.js` | Buys new pservs within budget  
+| `server-upgrader.js` | Upgrades pserv RAM intelligently  
+| `home-upgrader.js` | Upgrades home server RAM  
+| `server-cleaner.js` | Deletes tiny/obsolete pservs  
+| `deploy-hack-to-slaves.js` | Runs `smart-hack.js` on pservs  
+| `deploy-self-hack.js` | Runs `self-hack.js` on all rooted servers  
 
 ---
 
-## ⚔️ Smart Hack Fallback (src/strategies)
-
-Fallback if RAM is too low or early-game conditions are met.
+### 📂 `src/batch/` – Optional Batch Hacking
 
 | Script | Role |
 |--------|------|
-| `smart-hack.js` | RAM-safe loop that weakens, grows, or hacks based on current server state  
-| `tools/early-hack.js` | Automatically deploys smart-hack to low-RAM servers (configurable)  
-| `runner/hack-distributor.js` | Dynamically distributes smart-hack instances based on available threads  
+| `schedule-distributor.js` | Reads `targets.txt`, launches scheduler  
+| `hwgw-scheduler.js` | Implements Hack-Grow-Weaken-Weaken delay batching  
+| `actions/hack.js` etc. | Simple delay-wrapped primitives for HWGW  
+
+> Batch hacking is only used if enough RAM is available.
 
 ---
 
-## 🏛️ Infrastructure (src/infra)
-
-Automates server scaling and management.
+### 📂 `src/strategies/` – Hack Strategy
 
 | Script | Role |
 |--------|------|
-| `server-purchase.js` | Buys new servers based on available budget  
-| `server-upgrade.js` | Upgrades purchased servers' RAM (if affordable)  
-| `deploy-hack-to-slaves.js` | Copies and runs smart-hack.js on all purchased servers  
-| `home-upgrader.js` | Automatically upgrades home RAM when budget allows  
-| `server-cleaner.js` | Deletes small servers to recycle slots  
+| `smart-hack.js` | Prioritized loop: weaken → grow → hack  
+| `self-hack.js` | Same logic, but distributed to remote rooted servers  
+
+Used by:
+- `deploy-hack-to-slaves.js` for pservs  
+- `deploy-self-hack.js` for rooted servers
 
 ---
 
-## 💹 Stock Bot (src/stock)
-
-Automatically invests in the stock market with or without 4S API access.
+### 📂 `src/stock/` – Stock Automation
 
 | Script | Role |
 |--------|------|
-| `stock-bot.js` | Decides whether to run `stock-full.js` or `stock-lite.js` based on API availability and budget  
-| `stock-full.js` | Uses 4S API to make high-confidence trades  
-| `stock-lite.js` | Trades based on forecast/volatility fallback logic  
-| `stock-logger.js` | Tracks stock value history for analysis/debugging  
+| `stock-bot.js` | Main entry → chooses full/lite depending on 4S  
+| `stock-full.js` | Uses 4S APIs to invest dynamically  
+| `stock-lite.js` | Fallback using forecast & volatility  
+| `stock-logger.js` | Records portfolio value and logs  
+
+Stock mode only activates if:
+- 4S APIs available **or**
+- `feature-toggle.json` allows it **and**
+- Sufficient budget exists
 
 ---
 
-## 🧠 Adaptive Config (src/tools)
+### 📂 `src/factions/` – Faction Automation
 
 | Script | Role |
 |--------|------|
-| `apply-bitnode-config.js` | Sets budget ratios per BitNode (writes `budget-config.txt`)  
-| `set-feature-toggle.js` | Enables/disables modules like stock/factions via `feature-toggle.json`  
-| `feature-toggle-scheduler.js` | Automatically toggles features based on progress (optional)  
+| `faction-manager.js` | Joins new factions, prioritizes from `factions.txt`  
+| `faction-worker.js` | Runs work (field, hacking, etc.) for rep gain  
 
 ---
 
-## 🧬 Factions (src/factions)
+### 📂 `src/endgame/` – BitNode Reset
 
 | Script | Role |
 |--------|------|
-| `faction-manager.js` | Auto joins new factions and prioritizes based on `factions.txt`  
-| `faction-worker.js` | Runs faction work tasks (field, hacking, security) to gain rep  
+| `daedalus-detector.js` | Detects when Daedalus can be joined  
+| `bitnode-reset.js` | Automatically resets after prep  
+
+Triggered once all factions joined and money is sufficient.
 
 ---
 
-## 🧩 Endgame (src/endgame)
+### 📂 `src/tools/` – Config Helpers
 
 | Script | Role |
 |--------|------|
-| `daedalus-detector.js` | Monitors if Daedalus is available and checks requirements  
-| `bitnode-reset.js` | Automatically triggers reset once requirements are met  
+| `apply-bitnode-config.js` | Writes `budget-config.txt` per BitNode  
+| `set-feature-toggle.js` | Edits `feature-toggle.json` to enable/disable modules  
+| `feature-toggle-scheduler.js` | Dynamically toggles modules as milestones hit  
 
 ---
 
-## 🔧 Config Files (config/)
+### 📂 `src/utils/`
+
+| Script | Role |
+|--------|------|
+| `money-manager.js` | Allocates money between infra/stock reserves  
+
+---
+
+## ⚙️ Config Folder
 
 | File | Description |
 |------|-------------|
-| `feature-toggle.json` | Enables/disables optional modules like stock/faction/endgame  
-| `budget-config.txt` | Allocates percentage of funds to infra/stock/etc  
-| `factions.txt` | User-defined list of preferred factions (e.g., NiteSec, Netburners)  
-| `early-targets.txt` | Used by early-hack modules for early deployment
+| `feature-toggle.json` | Optional modules (`stock`, `factions`, `endgame`)  
+| `budget-config.txt` | Allocated funds for infra/stock/etc (BitNode-aware)  
+| `factions.txt` | Prioritized faction list  
+| `early-targets.txt` | Pre-hack targets for `early-hack.js`  
 
 ---
 
-## 🔁 Background Automation (auto-runner.js)
+## 🔁 `auto-runner.js` – Background Automation
 
-Runs in a loop every 60 seconds to:
+Runs every 60s (adjustable) and:
 
-- Re-run `server-purchase.js`, `deploy-hack-to-slaves.js`
-- Rerun stock-bot
-- Auto-scale systems as funds increase
+- Purchases new servers if possible
+- Deploys updated scripts to servers
+- Runs stock-bot periodically
 
----
-
-## 🧪 Dev & Debugging Notes
-
-- `tail()` is disabled in production scripts to avoid screen spam
-- `print()` used for log-only info; `tprint()` reserved for major events
-- `setup.js` can be run repeatedly to fetch latest GitHub scripts
-- Scripts are all `ps`-aware → won't duplicate unless killed/reset
+Safe to keep running persistently.  
+Scripts are `ps()`-aware → no duplication.
 
 ---
 
-## 📦 Future Improvements
+## 🧪 Developer Notes
 
-- Gang automation (BitNode-2+)
-- Corporation automation
-- Bladeburner automation
-- Hacknet investment control
-- UI CLI config editor
+- `tprint()` only for high-priority logs  
+- `print()` used inside logs/debug windows  
+- `tail()` usage minimized to avoid UI clutter  
+- Every module is safe to rerun or update dynamically  
+- `setup.js` can be rerun to patch any missing files  
 
 ---
 
-## 👤 Author
+## 💡 Customization Tips
+
+| Goal | Modify |
+|------|--------|
+| Add new hack strategy | `src/strategies/*.js` and update deployer  
+| Add new modules | Extend `main.js` or `auto-runner.js`  
+| Adjust budgets | Edit `tools/apply-bitnode-config.js`  
+| Skip stock module | Toggle `feature-toggle.json`  
+| Use batch hacking only | Remove `deploy-self-hack.js` call  
+
+---
+
+## 📎 Maintainer
 
 Maintained by [@icymelonpop](https://github.com/icymelonpop)
 
