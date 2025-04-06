@@ -1,23 +1,31 @@
 /** @param {NS} ns **/
 export async function main(ns) {
+    ns.disableLog("ALL");
+
     const script = "src/strategies/smart-hack.js";
-    const targetListFile = "targets.txt";
+    const targetListFile = "config/targets.txt";
     const host = "home";
 
-    // Check if the hack script exists
     if (!ns.fileExists(script, host)) {
         ns.tprint(`❌ Script not found: ${script}`);
         return;
     }
 
-    // Load targets from file
-    const targets = ns.read(targetListFile).split("\n").filter(t => t.trim() !== "");
+    if (!ns.fileExists(targetListFile, host)) {
+        ns.tprint(`❌ Missing file: ${targetListFile}`);
+        return;
+    }
+
+    const targets = ns.read(targetListFile)
+        .split("\n")
+        .map(t => t.trim())
+        .filter(Boolean);
+
     if (targets.length === 0) {
         ns.tprint("⚠️ No targets found in targets.txt");
         return;
     }
 
-    // Calculate available threads
     const scriptRam = ns.getScriptRam(script);
     const maxRam = ns.getServerMaxRam(host);
     const usedRam = ns.getServerUsedRam(host);
@@ -30,16 +38,23 @@ export async function main(ns) {
     }
 
     const threadsPerTarget = Math.max(1, Math.floor(maxThreads / targets.length));
-
-    // Kill existing instances of the script
-    ns.scriptKill(script, host);
-
     let usedThreads = 0;
     let launched = 0;
 
-    // Distribute script across targets
+    // Optional: kill existing instances
+    ns.scriptKill(script, host);
+
     for (const target of targets) {
         if (usedThreads + threadsPerTarget > maxThreads) break;
+
+        // Skip if already running for this target
+        const alreadyRunning = ns.ps(host).some(p =>
+            p.filename === script && p.args.includes(target)
+        );
+        if (alreadyRunning) {
+            ns.print(`⏳ Already running: ${target}`);
+            continue;
+        }
 
         const pid = ns.exec(script, host, threadsPerTarget, target);
         if (pid !== 0) {
@@ -49,7 +64,9 @@ export async function main(ns) {
         } else {
             ns.print(`⚠️ Failed to launch script on ${target}`);
         }
+
+        await ns.sleep(100); // Prevent overlap
     }
 
-    ns.tprint(`✅ Launched on ${launched} targets with ${usedThreads}/${maxThreads} threads used.`);
+    ns.tprint(`✅ Launched on ${launched} target(s). Threads used: ${usedThreads}/${maxThreads}`);
 }

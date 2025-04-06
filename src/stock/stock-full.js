@@ -1,19 +1,13 @@
+import { getMoneyConfig } from "utils/money-config.js";
+
 /** @param {NS} ns **/
 export async function main(ns) {
-    const config = {
-        interval: 5000,              // Time between each loop (ms)
-        moneyKeep: 20e9,             // Minimum money to keep in reserve
-        buyThreshold: 0.6,           // Forecast threshold for buying long
-        sellThreshold: 0.55,         // Forecast threshold for selling long
-        volatilityLimit: 0.05,       // Max allowed volatility
-        maxSharePercent: 1.0,        // Max percentage of available shares to buy
-        minProfitPercent: 0.15       // Minimum profit ratio before forced sell
-    };
-
     ns.disableLog("ALL");
+    ns.clearLog();
     ns.tail();
 
-    // Check if this stock is a good candidate for buying
+    let config = getMoneyConfig(ns);
+
     function shouldBuy(symbol) {
         const forecast = ns.stock.getForecast(symbol);
         const volatility = ns.stock.getVolatility(symbol);
@@ -34,7 +28,7 @@ export async function main(ns) {
         if (!shouldBuy(symbol)) return;
 
         const [shares] = ns.stock.getPosition(symbol);
-        if (shares > 0) return; // Already holding
+        if (shares > 0) return;
 
         const availableMoney = ns.getPlayer().money - config.moneyKeep;
         if (availableMoney <= 0) return;
@@ -60,19 +54,42 @@ export async function main(ns) {
             const bidPrice = ns.stock.getBidPrice(symbol);
             const revenue = ns.stock.sellStock(symbol, shares);
             const profit = (bidPrice - avgPrice) * shares;
-
-            ns.toast(`🔴 Sold ${symbol}: $${ns.nFormat(profit, "$0.000a")}`, "success", 5000);
+            ns.toast(`🔴 Sold ${symbol}: $${ns.formatNumber(profit, "0.000a")}`, "success", 5000);
         }
     }
 
-    // Main loop
+    function calculateTotalStockWorth() {
+        let total = 0;
+        for (const symbol of ns.stock.getSymbols()) {
+            const [longShares, , shortShares,] = ns.stock.getPosition(symbol);
+            const price = ns.stock.getBidPrice(symbol);
+            total += (longShares + shortShares) * price;
+        }
+        return total;
+    }
+
+    // 🔁 Main loop
     while (true) {
+        config = getMoneyConfig(ns); // ⏱ Refresh config dynamically every loop
+
         const symbols = ns.stock.getSymbols();
 
         for (const symbol of symbols) {
             trySell(symbol);
             tryBuy(symbol);
         }
+
+        const cash = ns.getPlayer().money;
+        const stockWorth = calculateTotalStockWorth();
+        const netWorth = cash + stockWorth;
+
+        ns.clearLog();
+        ns.print("💹 Stock Bot Active");
+        ns.print("────────────────────────────");
+        ns.print(`💰 Cash:      ${ns.formatNumber(cash, "$0.000a")}`);
+        ns.print(`📈 Stock:     ${ns.formatNumber(stockWorth, "$0.000a")}`);
+        ns.print(`🧾 Net Worth: ${ns.formatNumber(netWorth, "$0.000a")}`);
+        ns.print(`⏱  Updated:   ${new Date().toLocaleTimeString()}`);
 
         await ns.sleep(config.interval);
     }

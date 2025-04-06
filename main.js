@@ -1,75 +1,85 @@
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog("ALL");
+    ns.clearLog();
     ns.ui.openTail();
+
     ns.tprint("🚀 Launching main automation system...");
 
-    // Utility to avoid re-running already active scripts
-    function safeRun(script, args = []) {
-        const isRunning = ns.ps("home").some(p => p.filename === script);
-        if (!isRunning) {
-            const pid = ns.run(script, 1, ...args);
-            ns.print(pid !== 0
-                ? `✅ Launched: ${script}`
-                : `❌ Failed to launch: ${script}`
-            );
-        } else {
-            ns.print(`⏳ Already running: ${script}`);
-        }
-    }
+    const bitNode = ns.getResetInfo().currentNode;
+    ns.print(`🧠 Running on BitNode-${bitNode}`);
 
-    // Load feature toggles
+    // Load feature toggle config
     let toggle = {
         enableStock: true,
         enableFactionAutomation: true,
         enableEarlyHack: true,
-        enableEndgame: true
+        enableEndgame: true,
+        enableCorpAutomation: true // New toggle (optional)
     };
 
-    if (ns.fileExists("config/feature-toggle.json")) {
+    const toggleFile = "config/feature-toggle.json";
+    if (ns.fileExists(toggleFile)) {
         try {
-            toggle = JSON.parse(ns.read("config/feature-toggle.json"));
+            toggle = JSON.parse(ns.read(toggleFile));
         } catch {
-            ns.print("⚠️ Failed to parse config/feature-toggle.json. Using defaults.");
+            ns.print(`⚠️ Failed to parse ${toggleFile}. Using defaults.`);
         }
     }
 
-    const bitNode = ns.getResetInfo().currentNode;
-    ns.tprint(`🧠 Running on BitNode-${bitNode}`);
+    // Utility: prevent duplicate script execution
+    function safeRun(script, args = []) {
+        const isRunning = ns.ps("home").some(p => p.filename === script);
+        if (isRunning) {
+            ns.print(`⏳ Already running: ${script}`);
+            return;
+        }
 
-    // 🧠 Core setup
+        const pid = ns.run(script, 1, ...args);
+        ns.print(pid !== 0
+            ? `✅ Launched: ${script}`
+            : `❌ Failed to launch: ${script}`);
+    }
+
+    // 🧠 Core modules
     safeRun("src/core/network-mapper.js");
     safeRun("src/core/root-access.js");
     safeRun("src/core/target-selector.js");
-    // Optional: Self-hack distributed strategy for rooted servers
-    safeRun("src/infra/deploy-self-hack.js");
 
-    // ⚙️ Home RAM upgrade
+    // 💻 Home RAM upgrades
     safeRun("src/infra/home-upgrader.js");
 
-    // 💻 Early hack loop
+    // 📡 Deploy self-hack across rooted servers
+    safeRun("src/infra/deploy-self-hack.js");
+
+    // 🐣 Early RAM-safe fallback (optional)
     if (toggle.enableEarlyHack) {
         safeRun("src/tools/early-hack.js");
     }
 
-    // ⚔️ Batch hacking system
+    // ⚔️ Batch scheduler (HWGW)
     safeRun("src/batch/schedule-distributor.js");
 
-    // 🏛️ Faction automation
+    // 🏛️ Faction logic
     if (toggle.enableFactionAutomation) {
         safeRun("src/factions/faction-manager.js");
         safeRun("src/factions/faction-worker.js");
     }
 
-    // 📈 Stock system
+    // 💹 Stock trading logic (4S auto-detection inside bot)
     if (toggle.enableStock) {
         safeRun("src/stock/stock-bot.js");
     }
 
-    // 🔁 Infra loop
+    // 🏢 Corporation automation (BitNode-3 only)
+    if (bitNode === 3 && toggle.enableCorpAutomation) {
+        safeRun("src/corp/corp-manager.js");
+    }
+
+    // 🔁 Background loop: infra scaling + stock rebalance
     safeRun("auto-runner.js");
 
-    // 🧩 Endgame logic
+    // 🧩 Endgame logic: Daedalus unlock, BitNode reset
     if (toggle.enableEndgame) {
         safeRun("src/endgame/daedalus-detector.js");
         safeRun("src/endgame/bitnode-reset.js");

@@ -1,19 +1,19 @@
-/** @param {NS} ns **/
-export async function main(ns) {
-    const config = {
-        interval: 5000,               // Time between each loop (ms)
-        moneyKeep: 10e9,              // Minimum money to keep in reserve
-        maxSharePercent: 1.0,         // Max percentage of shares to buy
-        minProfit: 0.10,              // Sell if profit exceeds 10%
-        historyLength: 5              // Price history length for trend detection
-    };
+import { getMoneyConfig } from "/src/utils/money-config.js";
 
+export async function main(ns) {
     ns.disableLog("ALL");
+    ns.clearLog();
     ns.tail();
+
+    const config = {
+        interval: 5000,       // Time between each loop (ms)
+        historyLength: 5,     // Price history window
+        minProfit: 0.10       // Minimum profit before selling
+    };
 
     const priceHistory = {};
 
-    // Update price history for a symbol
+    // Update price history for a stock
     function updatePrice(symbol, price) {
         if (!priceHistory[symbol]) priceHistory[symbol] = [];
         priceHistory[symbol].push(price);
@@ -22,7 +22,7 @@ export async function main(ns) {
         }
     }
 
-    // Check if price is trending upward
+    // Check if the stock price is trending upward
     function isUpwardTrend(symbol) {
         const history = priceHistory[symbol];
         return (
@@ -32,22 +32,22 @@ export async function main(ns) {
         );
     }
 
-    // Attempt to buy stock based on price trend
-    function tryBuy(symbol) {
+    // Try to buy stock if conditions are met
+    function tryBuy(symbol, moneyKeep, maxSharePercent) {
         const price = ns.stock.getPrice(symbol);
         if (price <= 0 || !isFinite(price)) return;
 
         updatePrice(symbol, price);
 
         const [shares] = ns.stock.getPosition(symbol);
-        if (shares > 0) return;
+        if (shares > 0) return; // Already holding
 
         if (!isUpwardTrend(symbol)) return;
 
-        const available = ns.getPlayer().money - config.moneyKeep;
+        const available = ns.getServerMoneyAvailable("home") - moneyKeep;
         if (available < price) return;
 
-        const maxShares = ns.stock.getMaxShares(symbol) * config.maxSharePercent;
+        const maxShares = ns.stock.getMaxShares(symbol) * maxSharePercent;
         const quantity = Math.floor(Math.min(available / price, maxShares));
         if (quantity <= 0) return;
 
@@ -57,7 +57,7 @@ export async function main(ns) {
         }
     }
 
-    // Attempt to sell if profit is above threshold
+    // Try to sell stock if profit condition is met
     function trySell(symbol) {
         const [shares, avgPrice] = ns.stock.getPosition(symbol);
         if (shares <= 0) return;
@@ -71,14 +71,39 @@ export async function main(ns) {
         }
     }
 
-    // Main loop
-    while (true) {
-        const symbols = ns.stock.getSymbols();
+    // Calculate total worth of owned stocks
+    function calculateStockWorth() {
+        let total = 0;
+        for (const symbol of ns.stock.getSymbols()) {
+            const [shares] = ns.stock.getPosition(symbol);
+            const price = ns.stock.getPrice(symbol);
+            total += shares * price;
+        }
+        return total;
+    }
 
+    // 🔁 Main loop
+    while (true) {
+        const { moneyKeep, maxSharePercent } = getMoneyConfig(ns);
+
+        const symbols = ns.stock.getSymbols();
         for (const symbol of symbols) {
             trySell(symbol);
-            tryBuy(symbol);
+            tryBuy(symbol, moneyKeep, maxSharePercent);
         }
+
+        // Display current finances
+        const cash = ns.getServerMoneyAvailable("home");
+        const stockWorth = calculateStockWorth();
+        const netWorth = cash + stockWorth;
+
+        ns.clearLog();
+        ns.print("📉 Lite Stock Bot Active");
+        ns.print("────────────────────────────");
+        ns.print(`💰 Cash:      ${ns.formatNumber(cash, "$0.000a")}`);
+        ns.print(`📈 Stock:     ${ns.formatNumber(stockWorth, "$0.000a")}`);
+        ns.print(`🧾 Net Worth: ${ns.formatNumber(netWorth, "$0.000a")}`);
+        ns.print(`⏱  Updated:   ${new Date().toLocaleTimeString()}`);
 
         await ns.sleep(config.interval);
     }

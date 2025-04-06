@@ -1,42 +1,48 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    const hackingLevelRequired = 1000;
-    const moneyRequired = 1e9;
-    const serverCountRequired = 20;
+    const requirements = {
+        hacking: 1000,
+        money: 1e9,
+        servers: 20
+    };
 
-    // Early exit if singularity not unlocked
-    if (!ns.singularity) {
+    const target = "w0r1d_d43m0n";
+
+    // Ensure Singularity API is accessible
+    if (typeof ns.singularity?.installBackdoor !== "function") {
         ns.tprint("❌ Singularity functions not available.");
         return;
     }
 
-    const hasDaedalus = ns.getPlayer().factions.includes("Daedalus");
+    const player = ns.getPlayer();
+    const hasDaedalus = player.factions.includes("Daedalus");
 
+    // Step 1: Check if player is invited
     if (!hasDaedalus) {
-        const player = ns.getPlayer();
-        const hasLevel = player.hacking >= hackingLevelRequired;
-        const hasMoney = ns.getServerMoneyAvailable("home") >= moneyRequired;
-        const hasServers = ns.getPurchasedServers().length >= serverCountRequired;
+        const hasLevel = player.hacking >= requirements.hacking;
+        const hasMoney = ns.getServerMoneyAvailable("home") >= requirements.money;
+        const hasServers = ns.getPurchasedServers().length >= requirements.servers;
 
         if (hasLevel && hasMoney && hasServers) {
-            ns.toast("🎯 Daedalus unlock condition met! Check for invitation!", "info", 8000);
-            ns.tprint("🟢 You meet the requirements to join Daedalus.");
+            ns.toast("🎯 Daedalus requirements met. Check for invitation!", "info", 8000);
+            ns.tprint("🟢 You meet the conditions to join Daedalus.");
         } else {
-            ns.print("⏳ Waiting for Daedalus conditions...");
+            ns.print("⏳ Waiting for Daedalus invitation conditions...");
         }
         return;
     }
 
-    // Already joined Daedalus: attempt backdoor to w0r1d_d43m0n
-    const target = "w0r1d_d43m0n";
+    // Step 2: Daedalus joined → install backdoor
     if (!ns.hasRootAccess(target)) {
-        ns.tprint(`❌ No root access to ${target}.`);
+        ns.tprint(`❌ No root access to ${target}`);
         return;
     }
 
-    // Try to connect and install backdoor
-    ns.tprint("🛠️ Connecting to w0r1d_d43m0n for backdoor...");
-    await ns.singularity.connect("w0r1d_d43m0n");
+    ns.tprint(`🛠️ Connecting to ${target}...`);
+    await ns.singularity.connect(target);
+
+    ns.tprint(`📡 Installing backdoor on ${target}...`);
     await ns.singularity.installBackdoor();
-    ns.tprint("✅ Backdoor installed on w0r1d_d43m0n.");
+
+    ns.tprint(`✅ Backdoor installed on ${target}.`);
 }

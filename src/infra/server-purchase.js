@@ -1,19 +1,21 @@
 /** @param {NS} ns **/
+import { getAvailableBudget } from "src/utils/money-manager.js";
+
 export async function main(ns) {
     const maxServers = ns.getPurchasedServerLimit();
     const baseRam = 8;
     const maxRam = 2 ** 20;
-    const budgetRatio = 0.25;
 
     const purchased = ns.getPurchasedServers();
+    const availableBudget = getAvailableBudget(ns, "infra");
 
     for (let i = purchased.length; i < maxServers; i++) {
         let ram = baseRam;
 
+        // Increase RAM as much as possible within budget
         while (ram <= maxRam) {
             const cost = ns.getPurchasedServerCost(ram);
-            const money = ns.getServerMoneyAvailable("home");
-            if (cost > money * budgetRatio) break;
+            if (cost > availableBudget) break;
             ram *= 2;
         }
 
@@ -21,8 +23,7 @@ export async function main(ns) {
 
         if (ram < baseRam) {
             if (i === purchased.length) {
-                // Only show once when nothing was purchased
-                ns.print("💸 Not enough money to purchase any server.");
+                ns.print("💸 Not enough budget to purchase any server.");
             }
             break;
         }

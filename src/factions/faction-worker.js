@@ -1,22 +1,32 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    const joined = ns.getPlayer().factions;
-    const preferred = ["Daedalus", "BitRunners", "NiteSec", "CyberSec"];
+    const joinedFactions = ns.getPlayer().factions;
+    const configFile = "config/factions.txt";
 
-    const faction = preferred.find(f => joined.includes(f));
-    if (!faction) {
-        ns.print("⏳ No valid faction to work for yet.");
+    let preferredFactions = [
+        "Daedalus", "BitRunners", "NiteSec", "CyberSec"
+    ];
+
+    if (ns.fileExists(configFile)) {
+        const raw = ns.read(configFile);
+        preferredFactions = raw.split("\n").map(f => f.trim()).filter(f => f);
+    }
+
+    const factionToWork = preferredFactions.find(f => joinedFactions.includes(f));
+    if (!factionToWork) {
+        ns.print("⏳ No valid faction found to work for.");
         return;
     }
 
-    const workTypes = ["Hacking Contracts", "Security Work", "Field Work"];
-    for (const work of workTypes) {
-        const success = ns.workForFaction(faction, work, false);
+    const workOptions = ["Field Work", "Hacking Contracts", "Security Work"];
+
+    for (const workType of workOptions) {
+        const success = ns.workForFaction(factionToWork, workType, false);
         if (success) {
-            ns.tprint(`💼 Working for ${faction} doing ${work}`);
+            ns.tprint(`💼 Working for ${factionToWork} - ${workType}`);
             return;
         }
     }
 
-    ns.print("⚠️ Could not start work for any faction.");
+    ns.print(`⚠️ Unable to start work for ${factionToWork}.`);
 }

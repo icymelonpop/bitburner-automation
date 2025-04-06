@@ -1,14 +1,14 @@
 /**
  * money-manager.js
- * Dynamic budget manager using external config JSON
- * Logs budget decisions to track real usage
+ * Budget manager using external JSON configuration
+ * Allows per-system dynamic fund allocation with logging
  */
 
 const configFile = "config/budget-config.txt";
 const logFile = "logs/money-usage-log.txt";
 
 /**
- * Load config from external file
+ * Load budget config from external file with fallback
  * @param {NS} ns
  * @returns {{reserve: number, stock: number, infra: number, other: number}}
  */
@@ -24,14 +24,22 @@ function loadConfig(ns) {
 
     try {
         const raw = ns.read(configFile);
-        return JSON.parse(raw);
-    } catch {
+        const parsed = JSON.parse(raw);
+
+        return {
+            reserve: parsed.reserve ?? fallback.reserve,
+            stock: parsed.stock ?? fallback.stock,
+            infra: parsed.infra ?? fallback.infra,
+            other: parsed.other ?? fallback.other,
+        };
+    } catch (e) {
+        ns.print(`⚠️ Failed to parse ${configFile}, using fallback.`);
         return fallback;
     }
 }
 
 /**
- * Log usage (internal use)
+ * Append usage to log file
  * @param {NS} ns
  * @param {string} system
  * @param {number} total
@@ -45,18 +53,19 @@ function logUsage(ns, system, total, usable, amount) {
 }
 
 /**
- * Get budget for a system and log it
+ * Returns available budget for the specified system
  * @param {NS} ns
- * @param {string} system - "stock" | "infra" | "other"
+ * @param {"stock" | "infra" | "other"} system
+ * @param {boolean} [log=true] - Whether to log this usage
  * @returns {number}
  */
-export function getAvailableBudget(ns, system = "stock") {
-    const total = ns.getServerMoneyAvailable("home");
+export function getAvailableBudget(ns, system = "stock", log = true) {
     const config = loadConfig(ns);
+    const total = ns.getServerMoneyAvailable("home");
     const usable = Math.max(0, total - config.reserve);
     const ratio = config[system] ?? 0;
     const amount = usable * ratio;
 
-    logUsage(ns, system, total, usable, amount);
+    if (log) logUsage(ns, system, total, usable, amount);
     return amount;
 }

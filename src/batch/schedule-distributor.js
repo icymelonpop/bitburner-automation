@@ -1,13 +1,12 @@
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog("ALL");
-    ns.tail();
 
-    const schedulerScript = "src/batch/hwgw-scheduler.js"; // Batch execution script
-    const targetListFile = "targets.txt";
+    const schedulerScript = "src/batch/hwgw-scheduler.js";
+    const targetListFile = "config/targets.txt";
 
-    // Load target list
-    if (!ns.fileExists(targetListFile)) {
+    // Load targets from file
+    if (!ns.fileExists(targetListFile, "home")) {
         ns.tprint(`❌ Missing file: ${targetListFile}`);
         return;
     }
@@ -15,7 +14,7 @@ export async function main(ns) {
     const targets = ns.read(targetListFile)
         .split("\n")
         .map(t => t.trim())
-        .filter(t => t.length > 0);
+        .filter(Boolean);
 
     if (targets.length === 0) {
         ns.tprint("⚠️ No targets found in targets.txt");
@@ -29,34 +28,33 @@ export async function main(ns) {
     let launched = 0;
 
     for (const target of targets) {
-        const usedRam = ns.getServerUsedRam(home);
-        const freeRam = maxRam - usedRam;
+        const freeRam = maxRam - ns.getServerUsedRam(home);
+        const threads = Math.floor(freeRam / scriptRam);
 
-        if (freeRam < scriptRam) {
-            ns.print("💤 Not enough RAM. Skipping...");
+        if (threads < 1) {
+            ns.print(`💤 Not enough RAM to run scheduler for ${target}`);
             continue;
         }
 
-        // Prevent duplicate scheduler for the same target
+        // Avoid launching duplicate scheduler
         const alreadyRunning = ns.ps(home).some(p =>
             p.filename === schedulerScript && p.args.includes(target)
         );
         if (alreadyRunning) {
-            ns.print(`⏳ Scheduler already running for ${target}`);
+            ns.print(`⏳ Already running: ${target}`);
             continue;
         }
 
-        const threads = Math.floor(freeRam / scriptRam);
         const pid = ns.exec(schedulerScript, home, threads, target);
         if (pid !== 0) {
-            ns.toast(`📅 Scheduled: ${target} (${threads} threads)`, "success", 5000);
+            ns.print(`📅 Scheduler launched: ${target} (${threads} threads)`);
             launched++;
         } else {
             ns.print(`❌ Failed to launch scheduler for ${target}`);
         }
 
-        await ns.sleep(200); // small delay between launches
+        await ns.sleep(200);
     }
 
-    ns.tprint(`✅ Launched ${launched} scheduler instance(s).`);
+    ns.tprint(`✅ Launched ${launched} HWGW scheduler(s).`);
 }

@@ -1,25 +1,38 @@
 /** @param {NS} ns **/
+import { getAvailableBudget } from "src/utils/money-manager.js";
+
 export async function main(ns) {
-    // Get the list of purchased servers
     const servers = ns.getPurchasedServers();
+    const budget = getAvailableBudget(ns, "infra");
 
-    // Loop through each server to check if an upgrade is possible
     for (const server of servers) {
-        // Get the current RAM size of the server
         const currentRam = ns.getServerMaxRam(server);
+        const nextRam = currentRam * 2;
+        const upgradeCost = ns.getPurchasedServerCost(nextRam);
 
-        // Calculate the upgrade cost (doubling the current RAM)
-        const upgradeCost = ns.getPurchasedServerCost(currentRam * 2);
-
-        // Get the available money in the home server
-        const moneyAvailable = ns.getServerMoneyAvailable("home");
-
-        // Check if there is enough money to upgrade the server
-        if (upgradeCost <= moneyAvailable) {
-            ns.purchaseServer(server, currentRam * 2); // Upgrade the RAM to double
-            ns.tprint(`✅ Upgraded ${server} to ${currentRam * 2}GB RAM.`);
-        } else {
-            ns.tprint(`❌ Not enough money to upgrade ${server} (needs ${upgradeCost} vs available ${moneyAvailable})`);
+        if (nextRam > ns.getPurchasedServerMaxRam()) {
+            ns.print(`⚠️ ${server} already at max RAM.`);
+            continue;
         }
+
+        if (upgradeCost > budget) {
+            ns.print(`⏳ Skipping ${server}: Not enough budget ($${ns.nFormat(upgradeCost, "0.000a")})`);
+            continue;
+        }
+
+        // Delete and re-purchase with higher RAM
+        ns.killall(server);
+        ns.deleteServer(server);
+        const newServer = ns.purchaseServer(server, nextRam);
+
+        if (newServer) {
+            ns.tprint(`🔁 Upgraded ${server} to ${nextRam}GB RAM.`);
+        } else {
+            ns.tprint(`❌ Failed to upgrade ${server}.`);
+        }
+
+        await ns.sleep(500);
     }
+
+    ns.print("✅ Server upgrade process complete.");
 }

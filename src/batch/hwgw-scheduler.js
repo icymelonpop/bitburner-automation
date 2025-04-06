@@ -1,7 +1,10 @@
 /** @param {NS} ns **/
 export async function main(ns) {
+    ns.disableLog("ALL");
+
     const target = ns.args[0];
     const threads = ns.args[1] ? parseInt(ns.args[1]) : 1;
+    const host = ns.getHostname();
 
     if (!target) {
         ns.tprint("❌ No target specified.");
@@ -16,20 +19,23 @@ export async function main(ns) {
     const hackTime = ns.getHackTime(target);
     const growTime = ns.getGrowTime(target);
 
-    const buffer = 100; // buffer (ms) between operations
+    const buffer = 200; // Increase buffer to avoid overlap (ms)
 
-    // Calculate delay for correct execution sequence:
-    // [ W ] → delay → [ H ] → delay → [ G ] → delay → [ W ]
+    // Delay timing
     const delayWeaken1 = 0;
     const delayHack = weakenTime - hackTime + buffer;
     const delayGrow = weakenTime - growTime + buffer * 2;
     const delayWeaken2 = buffer * 3;
 
-    // Execute batch with calculated delays and dynamic threads
-    ns.exec(scriptWeaken, "home", threads, target, delayWeaken1); // Weaken (for Hack)
-    ns.exec(scriptHack, "home", threads, target, delayHack);      // Hack
-    ns.exec(scriptGrow, "home", threads, target, delayGrow);      // Grow
-    ns.exec(scriptWeaken, "home", threads, target, delayWeaken2); // Weaken (for Grow)
+    // Execute HWGW batch
+    const pid1 = ns.exec(scriptWeaken, host, threads, target, delayWeaken1); // Weaken 1
+    const pid2 = ns.exec(scriptHack, host, threads, target, delayHack);      // Hack
+    const pid3 = ns.exec(scriptGrow, host, threads, target, delayGrow);      // Grow
+    const pid4 = ns.exec(scriptWeaken, host, threads, target, delayWeaken2); // Weaken 2
 
-    ns.tprint(`📅 HWGW scheduled for ${target} using ${threads} thread(s).`);
+    if (pid1 && pid2 && pid3 && pid4) {
+        ns.print(`📅 HWGW scheduled for ${target} | Threads: ${threads}`);
+    } else {
+        ns.print(`⚠️ Failed to schedule one or more actions for ${target}`);
+    }
 }

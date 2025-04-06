@@ -1,19 +1,21 @@
-/** @param {NS} ns */
+/** @param {NS} ns **/
 export async function main(ns) {
+    ns.disableLog("ALL");
+
     const visited = new Set();
     const servers = [];
 
-    // Recursively scan the network
-    function scanServer(server) {
+    // Recursive scan from home
+    function scan(server) {
         if (visited.has(server)) return;
         visited.add(server);
         servers.push(server);
         for (const neighbor of ns.scan(server)) {
-            scanServer(neighbor);
+            scan(neighbor);
         }
     }
 
-    scanServer("home");
+    scan("home");
 
     const targets = [];
 
@@ -22,32 +24,30 @@ export async function main(ns) {
         if (!ns.hasRootAccess(server)) continue;
         if (ns.getServerMaxMoney(server) === 0) continue;
 
-        const hackingLevel = ns.getHackingLevel();
-        const requiredHackingLevel = ns.getServerRequiredHackingLevel(server);
-
-        if (requiredHackingLevel > hackingLevel) continue;
+        const requiredLevel = ns.getServerRequiredHackingLevel(server);
+        if (requiredLevel > ns.getHackingLevel()) continue;
 
         targets.push({
             hostname: server,
             money: ns.getServerMaxMoney(server),
             security: ns.getServerMinSecurityLevel(server),
-            requiredLevel: requiredHackingLevel
+            requiredLevel
         });
     }
 
-    // Sort by max money descending, then by minimum security ascending
+    // Sort by most profitable: money/sec (naive: money / sec)
     targets.sort((a, b) => {
-        if (b.money !== a.money) return b.money - a.money;
-        return a.security - b.security;
+        const scoreA = a.money / a.security;
+        const scoreB = b.money / b.security;
+        return scoreB - scoreA;
     });
 
-    // Save to file
-    const targetList = targets.map(t => t.hostname);
-    await ns.write("targets.txt", targetList.join("\n"), "w");
+    const list = targets.map(t => t.hostname);
+    await ns.write("config/targets.txt", list.join("\n"), "w");
 
     // Print to terminal
     ns.tprint("🎯 Selected Targets:");
     for (const t of targets) {
-        ns.tprint(`- ${t.hostname} | 💰 ${ns.nFormat(t.money, "0.0a")} | 🔒 ${t.security}`);
+        ns.tprint(`- ${t.hostname} | 💰 ${ns.formatNumber(t.money, "0.0a")} | 🔒 ${t.security}`);
     }
 }
