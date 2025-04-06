@@ -1,7 +1,20 @@
 # Bitburner Automation System
 
-> Complete end-to-end automation system for Bitburner  
-> Includes hacking, server management, and dynamic stock trading with 4S detection.
+> Complete end-to-end automation framework for Bitburner  
+> Covers hacking, server infrastructure, intelligent stock trading (with 4S support), faction automation, and BitNode endgame reset.
+
+---
+
+## 🚀 Quick Start
+
+```js
+wget https://raw.githubusercontent.com/Icymelonpop/bitburner-automation/main/setup.js setup.js
+run setup.js
+```
+
+> ✅ Automatically downloads all scripts and launches `main.js`  
+> ⚙️ Applies BitNode-specific config  
+> 📂 Initializes full system: hacking, stock, factions, endgame, etc.
 
 ---
 
@@ -9,15 +22,23 @@
 
 ```
 src/
-├── actions/           # Primitive single-operations (hack/grow/weaken)
-├── batch/             # HWGW scheduling logic
+├── actions/           # Basic one-shot scripts: hack/grow/weaken
+├── batch/             # Batch HWGW scheduler per target
 ├── core/              # Network scan, root access, target selection
-├── infra/             # Server purchase, deploy, upgrade, and clean
-├── strategies/        # Intelligent, reactive hacking strategies
-├── stock/             # Stock trading bots with 4S fallback
-├── auto-runner.js     # Automation loop for all systems
-├── main.js            # Initial launch + network setup
-└── setup.js           # GitHub bootstrap installer
+├── endgame/           # Daedalus detection, BitNode reset logic
+├── factions/          # Faction management & rep farming
+├── infra/             # Purchased server management (buy/upgrade/deploy)
+├── stock/             # Stock bots (4S and fallback)
+├── strategies/        # Adaptive scripts (e.g., smart-hack)
+├── tools/             # BitNode budget config, feature toggles
+├── utils/             # Utilities: money manager, etc.
+config/
+├── feature-toggle.json # Enables/disables modules (optional)
+├── budget-config.txt   # BitNode-specific fund allocation
+├── factions.txt        # Optional faction priority list
+main.js                 # Central automation launcher
+auto-runner.js          # Background automation loop
+setup.js                # GitHub installer (wget this)
 ```
 
 ---
@@ -25,57 +46,70 @@ src/
 ## 🔁 System Automation Flow
 
 ```
-[GitHub Repo]
-     │
-     ▼
 [setup.js]
-  └─ Downloads all scripts from GitHub
+  ├─ Downloads all required scripts
+  ├─ Applies BitNode-specific budget config
   └─ Launches main.js
 
 [main.js]
-  ├─ core/network-mapper.js      ← Scan entire network
-  ├─ core/root-access.js         ← Gain root access
-  ├─ core/target-selector.js     ← Select best hacking targets
+  ├─ core/network-mapper.js       ← Scan network
+  ├─ core/root-access.js          ← Gain root access
+  ├─ core/target-selector.js      ← Select best hacking targets
+  ├─ tools/early-hack.js          ← Early game loop (RAM-safe)
   ├─ batch/schedule-distributor.js
-  │   └─ For each target:
-  │       └─ batch/hwgw-scheduler.js
-  │           ├─ actions/weaken.js
-  │           ├─ actions/hack.js
-  │           ├─ actions/grow.js
-  │           └─ actions/weaken.js
+  ├─ factions/faction-manager.js  ← Join & monitor factions
+  ├─ stock/stock-bot.js
+  │   ├─ stock-full.js ← if 4S API unlocked
+  │   └─ stock-lite.js ← fallback strategy
+  ├─ infra/home-upgrader.js
   └─ auto-runner.js
       ├─ infra/server-purchase.js
       ├─ infra/deploy-hack-to-slaves.js
-      └─ stock/stock-bot.js
-            ├─ stock-full.js      ← if 4S owned or purchased
-            └─ stock-lite.js      ← fallback if no 4S or low funds
+      └─ infra/server-upgrader.js
+
+[endgame]
+  ├─ daedalus-detector.js
+  └─ bitnode-reset.js
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🧠 BitNode Adaptive Budget
 
-```js
-// Step 1: Download and install
-run setup.js
+`setup.js` runs `tools/apply-bitnode-config.js`, which generates:
 
-// Step 2: Let main.js configure targets, access, and automation
-// Step 3: System will run hacking and stock bots intelligently
+```json
+{
+  "reserve": 3000000000,
+  "stock": 0.3,
+  "infra": 0.6,
+  "other": 0.1
+}
 ```
 
----
-
-## 📈 Features
-
-- Full HWGW batch scheduling per target
-- Root access automation
-- Dynamic target selection based on money/sec
-- 4S-aware stock bot: upgrades automatically
-- Fallback stock-lite strategy if 4S is unavailable
-- GitHub-ready folder and file naming
+> Budget splits vary per BitNode (e.g. BitNode-2 disables stock module)
 
 ---
 
-## 📎 Author
+## ✨ Features
 
-Maintained by [icymelonpop](https://github.com/icymelonpop)
+- ✅ Full HWGW batch scheduling
+- ✅ Intelligent target selection
+- ✅ Root access automation
+- ✅ Smart hack loop (RAM-safe early strategy)
+- ✅ Stock bot that adapts to 4S access
+- ✅ Auto faction join + rep farming
+- ✅ Auto home/server upgrades
+- ✅ Daedalus detection and auto-reset
+
+---
+
+## 📎 Maintainer
+
+Maintained by [@icymelonpop](https://github.com/icymelonpop)
+
+---
+
+## 🔒 License
+
+MIT License

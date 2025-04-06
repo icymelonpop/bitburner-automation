@@ -46,7 +46,7 @@ export async function main(ns) {
         "src/tools/set-feature-toggle.js",
         "src/tools/feature-toggle-scheduler.js",
 
-        // Utils
+        // Utilities
         "src/utils/money-manager.js",
 
         // Main runners
@@ -62,14 +62,13 @@ export async function main(ns) {
         } else {
             ns.tprint(`✖ Failed to download: ${file}`);
         }
-        await ns.sleep(100);
     }
 
-    // Apply BitNode-specific budget config
+    // Apply BitNode-specific config
     await ns.run("src/tools/apply-bitnode-config.js");
     await ns.sleep(500);
 
-    // Launch the main automation sequence
+    // Start main automation
     ns.tprint("🚀 Launching automation via main.js...");
     ns.run("main.js");
 }
