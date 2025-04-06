@@ -1,46 +1,59 @@
 /** @param {NS} ns **/
 export async function main(ns) {
     const script = "src/strategies/smart-hack.js";
-    const targets = ns.read("targets.txt").split("\n").filter(Boolean);
+    const targetList = ns.read("targets.txt").split("\n").filter(Boolean);
     const servers = ns.getPurchasedServers();
 
-    if (!ns.fileExists(script)) {
+    if (!ns.fileExists(script, "home")) {
         ns.tprint(`❌ Script not found: ${script}`);
         return;
     }
 
-    if (targets.length === 0) {
-        ns.tprint("⚠️ No targets available in targets.txt");
+    if (targetList.length === 0) {
+        ns.print("⚠️ No targets available.");
         return;
     }
 
+    let deployed = 0;
     let targetIndex = 0;
 
     for (const server of servers) {
-        await ns.killall(server);
-        await ns.scp(script, server);
+        const target = targetList[targetIndex % targetList.length];
+        targetIndex++;
 
-        const maxRam = ns.getServerMaxRam(server);
-        const usedRam = ns.getServerUsedRam(server);
-        const scriptRam = ns.getScriptRam(script);
-        const threads = Math.floor((maxRam - usedRam) / scriptRam);
-
-        if (threads <= 0) {
-            ns.tprint(`⚠️ Not enough RAM on ${server}`);
+        // Skip if already running the same script on the same target
+        if (ns.isRunning(script, server, target)) {
+            ns.print(`⏩ Already running on ${server} targeting ${target}`);
             continue;
         }
 
-        const target = targets[targetIndex % targets.length];
-        targetIndex++;
+        // Optional: Clean old scripts only if RAM is blocked
+        if (ns.getServerUsedRam(server) + ns.getScriptRam(script) > ns.getServerMaxRam(server)) {
+            ns.killall(server);
+        }
+
+        // Copy and run
+        await ns.scp(script, server);
+        const threads = Math.floor(ns.getServerMaxRam(server) / ns.getScriptRam(script));
+        if (threads < 1) {
+            ns.print(`⚠️ Not enough RAM on ${server}`);
+            continue;
+        }
 
         const pid = ns.exec(script, server, threads, target);
         if (pid !== 0) {
-            ns.tprint(`🚀 Running ${script} on ${server} targeting ${target} with ${threads} threads`);
+            ns.print(`🚀 Running ${script} on ${server} targeting ${target} with ${threads} threads`);
+            deployed++;
         } else {
-            ns.tprint(`❌ Failed to execute ${script} on ${server}`);
+            ns.print(`❌ Failed to execute on ${server}`);
         }
-        await ns.sleep(100);
+
+        await ns.sleep(50);
     }
 
-    ns.tprint("✅ Deployment to pservs complete.");
+    if (deployed > 0) {
+        ns.tprint(`✅ Deployment complete: ${deployed} server(s) updated`);
+    } else {
+        ns.print("ℹ️ No updates were needed");
+    }
 }

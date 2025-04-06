@@ -13,6 +13,7 @@ export async function main(ns) {
         "src/infra/server-upgrader.js",
         "src/infra/server-cleaner.js",
         "src/infra/show-purchased-servers.js",
+        "src/infra/deploy-self-hack.js",
         "src/infra/deploy-hack-to-slaves.js",
         "src/infra/home-upgrader.js",
 
@@ -24,6 +25,7 @@ export async function main(ns) {
         "src/actions/hack.js",
         "src/actions/grow.js",
         "src/actions/weaken.js",
+        "src/actions/self-hack.js",
         "src/strategies/smart-hack.js",
 
         // Stock

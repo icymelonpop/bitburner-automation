@@ -41,6 +41,8 @@ export async function main(ns) {
     safeRun("src/core/network-mapper.js");
     safeRun("src/core/root-access.js");
     safeRun("src/core/target-selector.js");
+    // Optional: Self-hack distributed strategy for rooted servers
+    safeRun("src/infra/deploy-self-hack.js");
 
     // ⚙️ Home RAM upgrade
     safeRun("src/infra/home-upgrader.js");
