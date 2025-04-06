@@ -10,7 +10,7 @@ export async function main(ns) {
 
         // Infrastructure
         "src/infra/server-purchase.js",
-        "src/infra/server-upgrade.js",
+        "src/infra/server-upgrader.js",
         "src/infra/server-cleaner.js",
         "src/infra/show-purchased-servers.js",
         "src/infra/deploy-hack-to-slaves.js",
@@ -53,26 +53,26 @@ export async function main(ns) {
         "main.js",
         "auto-runner.js",
 
-        // Config (moved to root config/)
-        "config/factions.txt",
-        "config/feature-toggle.json"
+        // Config files
+        "src/config/factions.txt"
     ];
 
-    for (const file of filesToDownload) {
-        const url = baseUrl + file;
-        const success = await ns.wget(url, file);
-        if (success) {
-            ns.print(`✔ Downloaded: ${file}`);
-        } else {
-            ns.tprint(`✖ Failed to download: ${file}`);
-        }
+    // Function to download files in parallel
+    async function downloadFiles(files) {
+        const downloadPromises = files.map(file => ns.wget(baseUrl + file, file));
+        await Promise.all(downloadPromises);
     }
+
+    // Download all files in parallel
+    await downloadFiles(filesToDownload);
+
+    ns.tprint("✅ All files downloaded successfully");
 
     // Apply BitNode-specific config
     await ns.run("src/tools/apply-bitnode-config.js");
     await ns.sleep(500);
 
-    // Start main automation
+    // Launch main automation script
     ns.tprint("🚀 Launching automation via main.js...");
     ns.run("main.js");
 }
