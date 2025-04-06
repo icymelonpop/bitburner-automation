@@ -49,7 +49,13 @@ export async function main(ns) {
     // 💻 Home RAM upgrades
     safeRun("src/infra/home-upgrader.js");
 
-    // 📡 Deploy self-hack across rooted servers
+    // ⏱️ Wait until targets.txt exists
+    while (!ns.fileExists("config/targets.txt")) {
+        ns.print("⏳ Waiting for targets.txt...");
+        await ns.sleep(1000);
+    }
+
+    // 💻 Deploy self-hack strategy after targets.txt is ready
     safeRun("src/infra/deploy-self-hack.js");
 
     // 🐣 Early RAM-safe fallback (optional)
