@@ -7,8 +7,15 @@
 
 ## 🚀 Quick Start
 
-```js
+### 1. Download the setup script:
+
+```bash
 wget https://raw.githubusercontent.com/Icymelonpop/bitburner-automation/main/setup.js setup.js
+```
+
+### 2. Run the installer:
+
+```bash
 run setup.js
 ```
 
@@ -22,16 +29,16 @@ run setup.js
 
 ```
 src/
-├── actions/           # Basic one-shot scripts: hack/grow/weaken
-├── batch/             # Batch HWGW scheduler per target
-├── core/              # Network scan, root access, target selection
-├── endgame/           # Daedalus detection, BitNode reset logic
-├── factions/          # Faction management & rep farming
-├── infra/             # Purchased server management (buy/upgrade/deploy)
-├── stock/             # Stock bots (4S and fallback)
-├── strategies/        # Adaptive scripts (e.g., smart-hack)
-├── tools/             # BitNode budget config, feature toggles
-├── utils/             # Utilities: money manager, etc.
+├── actions/            # Basic one-shot scripts: hack/grow/weaken
+├── batch/              # Batch HWGW scheduler per target
+├── core/               # Network scan, root access, target selection
+├── endgame/            # Daedalus detection, BitNode reset logic
+├── factions/           # Faction management & rep farming
+├── infra/              # Purchased server management (buy/upgrade/deploy)
+├── stock/              # Stock bots (4S and fallback)
+├── strategies/         # Adaptive scripts (e.g., smart-hack)
+├── tools/              # BitNode budget config, feature toggles
+├── utils/              # Utilities: money manager, etc.
 config/
 ├── feature-toggle.json # Enables/disables modules (optional)
 ├── budget-config.txt   # BitNode-specific fund allocation
@@ -65,7 +72,7 @@ setup.js                # GitHub installer (wget this)
   └─ auto-runner.js
       ├─ infra/server-purchase.js
       ├─ infra/deploy-hack-to-slaves.js
-      └─ infra/server-upgrader.js
+      └─ infra/server-upgrade.js
 
 [endgame]
   ├─ daedalus-detector.js
@@ -76,7 +83,13 @@ setup.js                # GitHub installer (wget this)
 
 ## 🧠 BitNode Adaptive Budget
 
-`setup.js` runs `tools/apply-bitnode-config.js`, which generates:
+When `setup.js` runs, it automatically executes:
+
+```bash
+run src/tools/apply-bitnode-config.js
+```
+
+This generates `config/budget-config.txt`, for example:
 
 ```json
 {
@@ -87,7 +100,8 @@ setup.js                # GitHub installer (wget this)
 }
 ```
 
-> Budget splits vary per BitNode (e.g. BitNode-2 disables stock module)
+> Budgets adjust dynamically depending on BitNode.  
+> (e.g. BitNode-2 disables stock module automatically)
 
 ---
 

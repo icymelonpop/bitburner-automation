@@ -1,6 +1,15 @@
-node_modules/
-*.log
-.vscode/
-*.tmp
+# Bitburner generated files
+*.lit
+*.txt
 *.exe
-.vscode/settings.json
+*.log
+
+# OS / IDE specific
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Optional
+logs/
+temp/
