@@ -29,7 +29,7 @@ export async function main(ns) {
         await ns.killall(server);
         await ns.scp(script, server, "home");
 
-        const pid = ns.exec(script, server, threads, target);
+        const pid = ns.exec(script, server, threads, server);
         if (pid !== 0) {
             ns.print(`🚀 ${server} → ${target} (${threads} threads)`);
         } else {
