@@ -54,10 +54,10 @@ export async function main(ns) {
         "auto-runner.js",
 
         // Config files
-        "src/config/budget-config.txt",
-        "src/config/factions.txt",
-        "src/config/early-targets.txt",
-        "src/config/feature-toggle.json"
+        "config/budget-config.txt",
+        "config/factions.txt",
+        "config/early-targets.txt",
+        "config/feature-toggle.json"
     ];
 
     // Function to download files in parallel
