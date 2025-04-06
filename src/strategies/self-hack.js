@@ -1,14 +1,34 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    const target = ns.args[0];
-    const host = ns.getHostname();
+    const hostname = ns.getHostname();
+    ns.disableLog("ALL");
 
-    if (!target || target === host) {
-        ns.tprint(`⚠️ Invalid target: '${target}' (cannot self-target '${host}')`);
+    // Load and sort targets
+    const file = "config/targets.txt";
+    if (!ns.fileExists(file)) {
+        ns.tprint("❌ Missing config/targets.txt. Cannot determine targets.");
         return;
     }
 
-    ns.disableLog("ALL");
+    const targets = ns.read(file)
+        .split("\n")
+        .map(s => s.trim())
+        .filter(s => s && s !== hostname && ns.hasRootAccess(s));
+
+    if (targets.length === 0) {
+        ns.tprint("⚠️ No valid targets found (excluding self or unrooted).");
+        return;
+    }
+
+    // Sort targets by max money descending, then min security
+    targets.sort((a, b) => {
+        const moneyDiff = ns.getServerMaxMoney(b) - ns.getServerMaxMoney(a);
+        if (moneyDiff !== 0) return moneyDiff;
+        return ns.getServerMinSecurityLevel(a) - ns.getServerMinSecurityLevel(b);
+    });
+
+    const target = targets[0];
+    ns.tprint(`🎯 Target acquired: ${target}`);
 
     while (true) {
         const maxMoney = ns.getServerMaxMoney(target);
@@ -31,6 +51,6 @@ export async function main(ns) {
             await ns.hack(target);
         }
 
-        await ns.sleep(100); // Slight delay to avoid tight infinite loop
+        await ns.sleep(100); // Slight delay for stability
     }
 }
