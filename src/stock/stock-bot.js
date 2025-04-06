@@ -4,8 +4,8 @@ export async function main(ns) {
     //ns.tail();
 
     const stock4SAPI = "4SMarketDataTixApi";
-    const fullBot = "stock/stock-full.js";
-    const liteBot = "stock/stock-lite.js";
+    const fullBot = "src/stock/stock-full.js";
+    const liteBot = "src/stock/stock-lite.js";
 
     const checkIfRunning = (script) =>
         ns.ps("home").some(p => p.filename === script);

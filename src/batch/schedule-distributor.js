@@ -3,7 +3,7 @@ export async function main(ns) {
     ns.disableLog("ALL");
     ns.tail();
 
-    const schedulerScript = "batch/hwgw-scheduler.js"; // Batch execution script
+    const schedulerScript = "src/batch/hwgw-scheduler.js"; // Batch execution script
     const targetListFile = "targets.txt";
 
     // Load target list

@@ -10,7 +10,7 @@ export async function main(ns) {
 
         // Infrastructure
         "src/infra/server-purchase.js",
-        "src/infra/server-upgrader.js",
+        "src/infra/server-upgrade.js",
         "src/infra/server-cleaner.js",
         "src/infra/show-purchased-servers.js",
         "src/infra/deploy-hack-to-slaves.js",
@@ -53,8 +53,9 @@ export async function main(ns) {
         "main.js",
         "auto-runner.js",
 
-        // Config files
-        "src/config/factions.txt"
+        // Config (moved to root config/)
+        "config/factions.txt",
+        "config/feature-toggle.json"
     ];
 
     for (const file of filesToDownload) {

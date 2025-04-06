@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    const script = "strategies/smart-hack.js";
+    const script = "src/strategies/smart-hack.js";
     const targets = ns.read("targets.txt").split("\n").filter(Boolean);
     const servers = ns.getPurchasedServers();
 

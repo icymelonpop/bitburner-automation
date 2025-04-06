@@ -8,9 +8,9 @@ export async function main(ns) {
         return;
     }
 
-    const scriptHack = "actions/hack.js";
-    const scriptGrow = "actions/grow.js";
-    const scriptWeaken = "actions/weaken.js";
+    const scriptHack = "src/actions/hack.js";
+    const scriptGrow = "src/actions/grow.js";
+    const scriptWeaken = "src/actions/weaken.js";
 
     const weakenTime = ns.getWeakenTime(target);
     const hackTime = ns.getHackTime(target);

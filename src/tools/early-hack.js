@@ -1,6 +1,6 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    const script = "strategies/smart-hack.js";
+    const script = "src/strategies/smart-hack.js";
     const targetsFile = "config/early-targets.txt";
 
     if (!ns.fileExists(script)) {

@@ -1,5 +1,5 @@
 /** @param {NS} ns **/
-import { getAvailableBudget } from "utils/money-manager.js";
+import { getAvailableBudget } from "src/utils/money-manager.js";
 
 export async function main(ns) {
     ns.disableLog("ALL");

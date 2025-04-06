@@ -22,15 +22,15 @@ export async function main(ns) {
 
     while (true) {
         // 🖥️ Purchase servers if possible
-        safeRun("infra/server-purchase.js");
+        safeRun("src/infra/server-purchase.js");
         await ns.sleep(200);
 
         // 🚀 Deploy smart-hack to purchased servers
-        safeRun("infra/deploy-hack-to-slaves.js");
+        safeRun("src/infra/deploy-hack-to-slaves.js");
         await ns.sleep(200);
 
         // 📈 Launch dynamic stock bot (auto handles 4S or lite fallback)
-        safeRun("stock/stock-bot.js");
+        safeRun("src/stock/stock-bot.js");
         await ns.sleep(200);
 
         // Wait before next cycle
