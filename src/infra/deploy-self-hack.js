@@ -1,37 +1,35 @@
 /** @param {NS} ns **/
 export async function main(ns) {
     const script = "src/strategies/self-hack.js";
-    const targets = ns.read("targets.txt").split("\n").filter(Boolean);
+    const servers = ns.read("server-list.txt").split("\n").filter(Boolean);
 
-    for (const target of targets) {
-        if (!ns.hasRootAccess(target)) continue;
-
-        // 복사 먼저 수행
-        await ns.scp(script, target);
-
-        const scriptRam = ns.getScriptRam(script);
-        if (!scriptRam || scriptRam <= 0) {
-            ns.tprint(`⚠️ Invalid script RAM for ${script}. Skipping ${target}`);
-            continue;
-        }
-
-        const ram = ns.getServerMaxRam(target);
-        const threads = Math.floor(ram / scriptRam);
-        if (threads < 1) {
-            ns.tprint(`⚠️ Not enough RAM on ${target}`);
-            continue;
-        }
-
-        ns.scriptKill(script, target);
-        const pid = ns.exec(script, target, threads);
-        if (pid !== 0) {
-            ns.tprint(`🚀 Deployed ${script} to ${target} with ${threads} threads`);
-        } else {
-            ns.tprint(`❌ Failed to deploy to ${target}`);
-        }
-
-        await ns.sleep(100);
+    if (!ns.fileExists(script, "home")) {
+        ns.tprint(`❌ Missing ${script}`);
+        return;
     }
 
-    ns.tprint("✅ Self-hack deployment complete.");
+    for (const server of servers) {
+        if (!ns.hasRootAccess(server)) continue;
+        if (server === "home") continue;
+
+        const maxRam = ns.getServerMaxRam(server);
+        const usedRam = ns.getServerUsedRam(server);
+        const freeRam = maxRam - usedRam;
+        const scriptRam = ns.getScriptRam(script);
+
+        const threads = Math.floor(freeRam / scriptRam);
+        if (threads < 1 || !Number.isFinite(threads)) continue;
+
+        await ns.killall(server);
+        await ns.scp(script, server, "home");
+
+        const pid = ns.exec(script, server, threads);
+        if (pid !== 0) {
+            ns.print(`🚀 Launched ${script} on ${server} with ${threads} threads`);
+        } else {
+            ns.print(`⚠️ Failed to run on ${server}`);
+        }
+    }
+
+    ns.tprint("✅ Self-hack deployed to all rooted servers.");
 }

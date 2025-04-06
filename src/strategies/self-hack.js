@@ -1,19 +1,19 @@
 /** @param {NS} ns **/
 export async function main(ns) {
-    const host = ns.getHostname();
+    const target = ns.getHostname();
 
     while (true) {
-        const money = ns.getServerMoneyAvailable(host);
-        const maxMoney = ns.getServerMaxMoney(host);
-        const sec = ns.getServerSecurityLevel(host);
-        const minSec = ns.getServerMinSecurityLevel(host);
+        const money = ns.getServerMoneyAvailable(target);
+        const max = ns.getServerMaxMoney(target);
+        const sec = ns.getServerSecurityLevel(target);
+        const min = ns.getServerMinSecurityLevel(target);
 
-        if (sec > minSec + 5) {
-            await ns.weaken(host);
-        } else if (money < maxMoney * 0.9) {
-            await ns.grow(host);
+        if (sec > min + 5) {
+            await ns.weaken(target);
+        } else if (money < max * 0.9) {
+            await ns.grow(target);
         } else {
-            await ns.hack(host);
+            await ns.hack(target);
         }
     }
 }
