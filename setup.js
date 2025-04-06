@@ -70,67 +70,46 @@ export async function main(ns) {
         "config/feature-toggle.json"
     ];
 
-    const configDirs = [
-        "config",
-        "src/core",
-        "src/infra",
-        "src/batch",
-        "src/actions",
-        "src/strategies",
-        "src/stock",
-        "src/factions",
-        "src/endgame",
-        "src/tools",
-        "src/utils",
-        "src/corp"
-    ];
-
-    // 🛠 Ensure all needed directories exist (by placing .keep files)
-    const dirs = new Set(filesToDownload.map(path => {
-        const parts = path.split("/");
-        parts.pop(); // remove filename
-        return parts.join("/");
-    }));
-
-    for (const dir of dirs) {
-        const dummyPath = `${dir}/.keep`;
+    // 🛠 Extract folders and create dummy file to ensure directory structure
+    const folders = new Set(filesToDownload.map(path => path.substring(0, path.lastIndexOf("/"))));
+    for (const folder of folders) {
         try {
-            await ns.write(dummyPath, "", "w");
+            await ns.write(`${folder}/placeholder.txt`, "// folder init", "w");
         } catch (e) {
-            ns.print(`⚠️ Could not create .keep in ${dir}: ${e.message}`);
+            ns.print(`⚠️ Failed to create ${folder}/placeholder.txt: ${e.message}`);
         }
     }
 
-    // Download all files concurrently
+    // 🔽 Download files concurrently
     const failed = [];
-    const promises = filesToDownload.map(async (file) => {
+    const downloads = filesToDownload.map(async file => {
         const success = await ns.wget(baseUrl + file, file);
-        if (success) {
-            ns.print(`✔ Downloaded: ${file}`);
-        } else {
+        if (!success) {
             ns.tprint(`✖ Failed to download: ${file}`);
             failed.push(file);
+        } else {
+            ns.print(`✔ Downloaded: ${file}`);
         }
     });
 
-    await Promise.all(promises);
+    await Promise.all(downloads);
 
     if (failed.length > 0) {
         ns.tprint(`❌ ${failed.length} file(s) failed to download:`);
-        for (const file of failed) {
-            ns.tprint(`   - ${file}`);
-        }
-        ns.tprint("⚠️ Setup incomplete. Please check the above files.");
+        for (const file of failed) ns.tprint(`   - ${file}`);
+        ns.tprint("⚠️ Setup incomplete. Please check errors.");
         return;
     }
 
     ns.tprint("✅ All files downloaded successfully");
 
-    // Apply BitNode-specific config
-    await ns.run("src/tools/apply-bitnode-config.js");
-    await ns.sleep(500);
+    // ⚙️ Apply BitNode budget config
+    const configPid = ns.run("src/tools/apply-bitnode-config.js");
+    if (configPid !== 0) {
+        await ns.sleep(500);
+    }
 
-    // Launch main automation
+    // 🚀 Launch main system
     ns.tprint("🚀 Launching automation via main.js...");
     ns.run("main.js");
 }
