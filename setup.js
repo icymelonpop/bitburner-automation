@@ -85,10 +85,19 @@ export async function main(ns) {
         "src/corp"
     ];
 
-    // Create necessary folders with dummy file if missing
-    for (const dir of configDirs) {
-        if (!ns.ls("home").some(f => f.startsWith(dir))) {
-            await ns.write(`${dir}/.keep`, "", "w");
+    // 🛠 Ensure all needed directories exist (by placing .keep files)
+    const dirs = new Set(filesToDownload.map(path => {
+        const parts = path.split("/");
+        parts.pop(); // remove filename
+        return parts.join("/");
+    }));
+
+    for (const dir of dirs) {
+        const dummyPath = `${dir}/.keep`;
+        try {
+            await ns.write(dummyPath, "", "w");
+        } catch (e) {
+            ns.print(`⚠️ Could not create .keep in ${dir}: ${e.message}`);
         }
     }
 
