@@ -51,7 +51,10 @@ export async function main(ns) {
 
         // Main runners
         "main.js",
-        "auto-runner.js"
+        "auto-runner.js",
+
+        // Config files
+        "config/factions.txt"
     ];
 
     for (const file of filesToDownload) {
