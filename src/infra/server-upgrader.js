@@ -2,15 +2,15 @@
 export async function main(ns) {
     // Get the list of purchased servers
     const servers = ns.getPurchasedServers();
-    
+
     // Loop through each server to check if an upgrade is possible
     for (const server of servers) {
         // Get the current RAM size of the server
         const currentRam = ns.getServerMaxRam(server);
-        
+
         // Calculate the upgrade cost (doubling the current RAM)
         const upgradeCost = ns.getPurchasedServerCost(currentRam * 2);
-        
+
         // Get the available money in the home server
         const moneyAvailable = ns.getServerMoneyAvailable("home");
 
