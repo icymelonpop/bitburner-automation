@@ -1,8 +1,9 @@
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog("ALL");
-    ns.tail();
-    ns.tprint("🔁 Starting auto-runner loop...");
+    //ns.tail();
+    //ns.tprint("🔁 Starting auto-runner loop...");
+    ns.print("🔁 Starting auto-runner loop...");
 
     // Safe script launcher (prevents duplicate execution)
     function safeRun(script, args = []) {

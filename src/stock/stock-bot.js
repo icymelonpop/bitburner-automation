@@ -1,7 +1,7 @@
 /** @param {NS} ns **/
 export async function main(ns) {
     ns.disableLog("ALL");
-    ns.tail();
+    //ns.tail();
 
     const stock4SAPI = "4SMarketDataTixApi";
     const fullBot = "stock/stock-full.js";
