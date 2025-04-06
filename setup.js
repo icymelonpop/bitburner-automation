@@ -25,7 +25,7 @@ export async function main(ns) {
         "src/actions/hack.js",
         "src/actions/grow.js",
         "src/actions/weaken.js",
-        "src/actions/self-hack.js",
+        "src/strategies/self-hack.js",
         "src/strategies/smart-hack.js",
 
         // Stock
